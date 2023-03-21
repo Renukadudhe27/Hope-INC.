@@ -1,0 +1,26 @@
+dataset <- read.csv("DONOR400.csv")
+nrow(dataset)
+ncol(dataset)
+head(dataset)
+trainingsize <- as.integer((1048-279)*(1-0/100))
+validationsize <- (1048-279)-trainingsize
+testingsize <- nrow(dataset)-(1048-279)
+training <- head(dataset,trainingsize)
+validation <- tail(head(dataset,trainingsize+validationsize),validationsize)
+testing <- tail(dataset,nrow(dataset)-(trainingsize+validationsize))
+if(validationsize==0) {validation <- training}
+nrow(training)
+nrow(validation)
+nrow(testing)
+model <- glm(Atleast400~attended_event+age+yrs_since_grad,data=training,family="binomial")
+summary(model)
+validation$predictedLR <- predict(model,validation,type="response")
+predictedclass <- ifelse(validation$predictedLR > 0.5,1,0)
+confusionmatrix <- table(factor(predictedclass,levels=0:1),factor(validation$Atleast400,levels=0:1))
+confusionmatrix
+accuracy <- (1 - mean(predictedclass != validation$Atleast400,na.rm=TRUE))*100
+paste(round(accuracy,2),"%",sep="")
+predictedLR <- predict(model,testing,type="response")
+predictedLR <- ifelse(predictedLR > 0.5,1,0)
+testing <- cbind(testing,predictedLR)
+write.csv(testing,"DONOR400_Prediction.csv",row.names=FALSE)
